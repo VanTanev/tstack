@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """pr-wait: watch one GitHub pull request and print one line per real event.
 
-  pr-wait <pr> [--repo owner/name] [--until green|ready|any-change] [--interval 20]
+  pr-wait <pr> [--repo owner/name] [--until green|ready|reviewed|any-change] [--interval 20]
 
 <pr> is a PR number or PR URL. Without --repo, the repo comes from the URL or
 from the current checkout. Stdout carries only events, one line each, so a
@@ -13,13 +13,16 @@ Progress and errors that do not end the run go to stderr.
               the base branch requires none)
   ready      green, Greptile or Macroscope reviewed the current head, and no
               review thread is unresolved (default)
+  reviewed    green, no review request to a bot (such as Copilot) is still
+              open, and no review thread is unresolved
   any-change  stop after the first poll that prints an event
 
 Exit codes
   0  the --until condition is met, or the PR merged
   1  the condition cannot be met without action: a required check failed, the
-     branch conflicts with its base, the PR closed, `ready` is blocked by
-     unresolved threads or a BEHIND branch, or GitHub stayed unreachable
+     branch conflicts with its base, the PR closed, `ready` or `reviewed` is
+     blocked by unresolved threads or a BEHIND branch, or GitHub stayed
+     unreachable
   2  bad arguments, unknown PR, or another pr-wait already watches this PR
 
 Events
@@ -89,6 +92,9 @@ query($owner: String!, $name: String!, $number: Int!) {
       comments(last: 100) { nodes { id url body author { login __typename } } }
       reviews(last: 100) {
         nodes { id url state body commit { oid } author { login __typename } }
+      }
+      reviewRequests(first: 50) {
+        nodes { requestedReviewer { __typename ... on Bot { login } } }
       }
       reviewThreads(last: 100) {
         nodes {
@@ -452,6 +458,14 @@ class Watcher:
                         text = verdict(s["body"]) or snippet(s["body"])
                         self.emit(f"summary:{s['id']}:{new}", f"{bot} summary changed on {short}: {text} {s['url']}")
 
+        # A bot such as Copilot reviews once per request. Its request stays open
+        # until that review arrives.
+        requested_bots = sorted(
+            node["requestedReviewer"]["login"]
+            for node in pr["reviewRequests"]["nodes"]
+            if (node.get("requestedReviewer") or {}).get("__typename") == "Bot"
+        )
+
         # Base branch and merge state.
         base_oid = ((pr.get("baseRef") or {}).get("target") or {}).get("oid")
         old_base = self.state["base_oid"]
@@ -487,6 +501,7 @@ class Watcher:
             else "",
             ", ".join(bot_status[b] for b in GATING_BOTS + ADVISORY_BOTS if b in bot_status)
             or "no Greptile or Macroscope yet",
+            f"review requested from {', '.join(requested_bots)}" if requested_bots else "",
             f"{len(unresolved)} unresolved threads",
             f"merge state {merge_state}",
         ]
@@ -504,13 +519,15 @@ class Watcher:
                 self.reported.add(checks_key)
                 self.finish(0, [f"green on {short}: {summary}{self.behind(base, base_oid, head)}"])
             # ready waits for Greptile or Macroscope, never for CodeRabbit.
-            if green and reviewed:
+            # reviewed waits for every bot whose review was requested.
+            review_done = not requested_bots if self.until == "reviewed" else bool(reviewed)
+            if green and review_done:
                 if unresolved:
                     self.finish(1, [f"blocked by {len(unresolved)} unresolved threads on {short}: {' '.join(unresolved)}"])
                 if merge_state == "BEHIND":
                     self.finish(1, [behind_line])
                 self.reported.add(checks_key)
-                self.finish(0, [f"ready on {short}: {summary}{self.behind(base, base_oid, head)}"])
+                self.finish(0, [f"{self.until} on {short}: {summary}{self.behind(base, base_oid, head)}"])
         if all_done and (stable or self.baseline):
             self.emit(checks_key, f"checks finished on {short}: {summary}")
         if self.until == "any-change" and self.events:
@@ -541,7 +558,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="pr-wait", description="Watch a GitHub PR and print one line per real event.")
     parser.add_argument("pr", nargs="?", help="PR number or URL")
     parser.add_argument("--repo", help="owner/name (default: from the URL or the current checkout)")
-    parser.add_argument("--until", choices=("green", "ready", "any-change"), default="ready")
+    parser.add_argument("--until", choices=("green", "ready", "reviewed", "any-change"), default="ready")
     parser.add_argument("--interval", type=int, default=20, help="seconds between polls (default 20, min 5)")
     args = parser.parse_args()
     repo, pr = parse_target(args.pr, args.repo)

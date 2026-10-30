@@ -41,7 +41,7 @@ Wait with `scripts/pr-wait` from this skill's directory (use its absolute
 path).
 
 ```bash
-pr-wait <pr> [--repo owner/name] [--until ready|green|any-change]
+pr-wait <pr> [--repo owner/name] [--until ready|reviewed|green|any-change]
 ```
 
 It prints one line per real event. It exits 0 when the `--until` condition is
@@ -50,8 +50,10 @@ unresolved threads, PR closed), and 2 on bad input.
 
 - `ready` (default): required checks green, Greptile or Macroscope reviewed the
   head, and no unresolved threads. Use this to babysit.
-- `green`: required checks only. Use it when the repo has no Greptile or
-  Macroscope.
+- `reviewed`: required checks green, every bot whose review was requested
+  (such as Copilot) reviewed, and no unresolved threads. Use it when the repo
+  requests Copilot reviews but has no Greptile or Macroscope.
+- `green`: required checks only. Use it when the repo has no review bot.
 - `any-change`: exit on the first event.
 
 In Claude Code, run it with the Monitor tool (`timeout_ms: 3600000`), so each
