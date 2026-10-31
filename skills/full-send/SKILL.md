@@ -46,17 +46,21 @@ one appears.
    smallest change that works. Fix the case that happened, not every case
    that could. If you are on the default branch, create a branch first.
 2. **Prove it.** Get proof for every change you made. See "Proof".
-3. **Get feedback.** Use the `sol-loop` skill to verify changes.
-4. **File the PR** with the `file-pr` skill. Rebase onto the latest default
+3. **Remove comments.** Follow full-send's [no-comments](references/no-comments.md), with its `references/comment-sicko.md` as the Comment Sicko.
+   Its scope is the diff from the merge-base with the base branch to the working tree, with untracked files.
+   This run is unattended and pre-approves no encoding, so do not ask about constraint comments.
+   Get proof for each code change it makes.
+4. **Get feedback.** Use the `sol-loop` skill to verify changes.
+5. **File the PR** with the `file-pr` skill. Rebase onto the latest default
    branch first. Add one short line to the description that says how you proved
    the change.
-5. **Babysit the PR** with the `babysit-pr` skill. Fix real findings and CI
+6. **Babysit the PR** with the `babysit-pr` skill. Fix real findings and CI
    failures. Get proof for each fix before you push it.
-6. **Merge** when the merge gate passes.
-7. **Report** in your final message: the PR link, the merge commit, your proof,
-   and each decision you made for the user.
+7. **Merge** when the merge gate passes.
+8. **Report** in your final message: the PR link, the merge commit, your proof,
+   each decision you made for the user, and the open work from `no-comments`.
 
-Stay active from step 1 to step 7. If you end your turn while checks or bots are
+Stay active from step 1 to step 8. If you end your turn while checks or bots are
 pending, the work stops, because nobody will prompt you again. Wait with the
 watcher from `babysit-pr`, so something wakes you when the PR changes. In T3
 Code that is `watch_pull_request`. If you stop before the merge, call
