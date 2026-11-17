@@ -45,6 +45,9 @@ missing or pre-failing checks in the brief.
 
 ## 2. Start Sol
 
+Read `~/.agents/docs/other-models.md` first: it names the provider, model,
+effort and command for each model.
+
 In T3, call `orchestrator_capabilities`. Pick the latest Sol unless the user
 named a version. Do not hardcode an ID. Record provider, model, and effort
 only if exposed. Use `delegate_task` every round (`role: "review"`,
