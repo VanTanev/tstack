@@ -16,6 +16,9 @@ high reasoning effort. If the user's instructions name council members, use
 those. Otherwise pick the latest flagship model from each provider, for
 example Claude Opus, GPT Sol, and Gemini Pro.
 
+Read `~/.agents/docs/other-models.md` first: it names the provider, model,
+effort and command for each model.
+
 In T3 Code, use `orchestrator_capabilities` to resolve the models, then
 `delegate_task` to start one delegate per model in parallel. Elsewhere, use
 the harness's subagent tools. If you cannot reach three providers, or a named
