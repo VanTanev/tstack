@@ -92,7 +92,8 @@ The code review never asks the user. Before you start it, find:
 
 - Spec: issue refs in `git log <base>..HEAD` or the PR body, a path the user
   named, or a spec file under `docs/`, `specs/` or `.scratch/` that matches the
-  branch. Fetch the issue text. With no spec, start Standards only.
+  branch or the feature. Fetch the issue text. With no issue tracker, go on
+  without one. With no spec, start Standards only.
 - Standards: every file in the repo that says how to write code.
   `CODING_STANDARDS.md` and `CONTRIBUTING.md` are always on the list when
   they exist.
@@ -104,6 +105,7 @@ start with:
 Review only. Do not edit, commit, push, comment on PRs, or start subagents.
 Repo: <abs path> Base: <sha> Intent: <intent> Out of scope: <scope> Checks: <results>
 See: git diff <base> [-- <paths>]; git status --short (read untracked).
+Commits: <git log <base>..HEAD --oneline>
 ```
 
 Standards continues:
