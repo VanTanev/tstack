@@ -21,7 +21,8 @@ of scope creep and don't be scared to push back.
   the user asks.
 - Stop early if a round returns only nits. Declined nits and comment,
   doc, or format-only fixes need no new round.
-- One reviewer only. Sol must not start subagents or reviewers.
+- One reviewer a round. Round 1 adds one code review: two more Sol
+  reviewers, Standards and Spec. Sol must not start subagents or reviewers.
 - Keep a ledger: id, severity, outcome, usage if returned. Never guess it.
 
 ## 1. Scope
@@ -51,7 +52,7 @@ effort and command for each model.
 In T3, call `orchestrator_capabilities`. Pick the latest Sol unless the user
 named a version. Do not hardcode an ID. Record provider, model, and effort
 only if exposed. Use `delegate_task` every round (`role: "review"`,
-`mode: "async"`). Save `taskId`. New `clientRequestId` per round.
+`mode: "async"`). Save `taskId`. New `clientRequestId` for each reviewer.
 `childThreadId` is storage, not the next target. Do not use
 `t3_thread_send`, `create_threads`, or `t3_thread_launch` for review.
 
@@ -60,8 +61,8 @@ a native Sol subagent and keep its ID. In Claude Code, use a custom subagent
 only if it is set up to run Sol. If no route runs Sol, report the blocker. Do
 not substitute a model.
 
-Do not edit scoped files while review runs. Wait for the notice. Do not
-poll or start a second reviewer. Timeout, error, or no reply is not
+Do not edit scoped files while review runs. Wait for every notice. Do not
+poll or start a reviewer that this skill does not name. Timeout, error, or no reply is not
 approval. On failure, cancel, verify stop, restart with the ledger.
 
 Round 1 brief (T3 children get no history):
@@ -78,6 +79,82 @@ blocker = intended case wrong. should = real bug callers will hit, in intent. ni
 Reply:
 VERDICT: APPROVE or CHANGES
 S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
+```
+
+### Round 1 code review
+
+Round 1 also starts two Sol reviewers by the route above, at the same time as
+the round 1 reviewer: Standards checks the diff against the repo's documented
+standards, and Spec checks it against the issue or spec. They run one time.
+Later rounds check their fixes with the open ids.
+
+The code review never asks the user. Before you start it, find:
+
+- Spec: issue refs in `git log <base>..HEAD` or the PR body, a path the user
+  named, or a spec file under `docs/`, `specs/` or `.scratch/` that matches the
+  branch or the feature. Fetch the issue text. With no issue tracker, go on
+  without one. With no spec, start Standards only.
+- Standards: every file in the repo that says how to write code.
+  `CODING_STANDARDS.md` and `CONTRIBUTING.md` are always on the list when
+  they exist.
+
+Code-review briefs, one for each axis (T3 children get no history). Both
+start with:
+
+```
+Review only. Do not edit, commit, push, comment on PRs, or start subagents.
+Repo: <abs path> Base: <sha> Intent: <intent> Out of scope: <scope> Checks: <results>
+See: git diff <base> [-- <paths>]; git status --short (read untracked).
+Commits: <git log <base>..HEAD --oneline>
+```
+
+Standards continues:
+
+```
+Standards files: <paths>
+Report, per file or hunk, (a) each place the diff breaks a documented
+standard: cite the file and the rule; (b) each baseline smell you see: name
+it and quote the hunk. A documented standard overrides the baseline. Each
+smell is a judgement call ("possible Feature Envy"). Skip what tooling
+enforces. Under 400 words.
+Baseline (Fowler, Refactoring ch. 3), smell -> fix:
+- Mysterious Name: a name that does not say what it does or holds -> rename it.
+- Duplicated Code: the same logic in more than one hunk or file -> extract it.
+- Feature Envy: a method that uses another object's data more than its own
+  -> move it to that data.
+- Data Clumps: the same fields or params travel together -> one type.
+- Primitive Obsession: a primitive or string stands for a domain concept
+  -> a small type for it.
+- Repeated Switches: the same switch or if-cascade on one type in several
+  places -> polymorphism, or one shared map.
+- Shotgun Surgery: one change edits many files -> gather what changes
+  together into one module.
+- Divergent Change: one module edited for unrelated reasons -> split it.
+- Speculative Generality: hooks, params or abstraction the intent does not
+  need -> delete or inline it.
+- Message Chains: long a.b().c().d() walks -> one method on the first object.
+- Middle Man: a class or function that only delegates -> call the target.
+- Refused Bequest: a subclass that ignores most of what it inherits
+  -> composition.
+should = real bug callers will hit, or a breach of a documented standard.
+nit = rest, and each baseline smell.
+Reply:
+VERDICT: APPROVE or CHANGES
+ST1 [should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
+```
+
+Spec continues:
+
+```
+Spec: <the spec text, or its path>
+Report (a) requirements the spec asks for that are missing or partial;
+(b) behaviour in the diff that the spec did not ask for; (c) requirements
+that look done but wrong. Quote the spec line for each. Under 400 words.
+blocker = a spec requirement missing or wrong. should = real bug callers will
+hit, or behaviour the spec did not ask for. nit = rest.
+Reply:
+VERDICT: APPROVE or CHANGES
+SP1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
 ```
 
 ## 3. Answer findings
@@ -101,12 +178,14 @@ changed, or approval does not cover the current behavior diff. Use a fresh
 `delegate_task` in T3, or follow up the saved native ID. Send the round 1 brief,
 the ledger (`fixed:` / `disagree:` / `declined:` + evidence), the same base
 diff, and the change since last round. Tell Sol: open ids and changed code only.
-Mark each old id `resolved` or `still open: <reason>`.
+Mark each old id `resolved` or `still open: <reason>`. The open ids include
+the open `ST` and `SP` ids. Standards and Spec do not run again.
 
 ## 5. Stop and ship
 
 Agreed: APPROVE on the current behavior diff, no blocker or should open,
-no concern of your own. Stuck: an item stays disputed after two replies,
+no concern of your own. Only the loop reviewer's verdict counts.
+"No blocker or should open" counts the `S`, `ST` and `SP` ids. Stuck: an item stays disputed after two replies,
 or budget ends. Show both sides in 2-3 lines each. The user decides.
 Budget end is not approval.
 
