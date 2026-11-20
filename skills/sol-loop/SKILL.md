@@ -84,10 +84,10 @@ S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
 
 ### Round 1 code review
 
-Call the Skill tool with "code-review" and do its steps 2 and 3. Section 1
-gives the base and the diff, in place of its step 1. Its step 4 sub-agents, Standards and Spec, run one time, in
-round 1: start each as a Sol reviewer by the route above, at the same time as
-the round 1 reviewer.
+Call the Skill tool with "code-review" and do its steps 2 and 3. The base and
+the diff of section 1 replace its step 1. Its step 4 sub-agents, Standards and
+Spec, run one time, in round 1: start each as a Sol reviewer by the route
+above, at the same time as the round 1 reviewer.
 With no spec, start Standards only. Skip its step 5: the findings go to the
 ledger, and later rounds check their fixes with the open ids.
 
