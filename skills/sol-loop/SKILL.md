@@ -53,7 +53,7 @@ effort and command for each model.
 In T3, call `orchestrator_capabilities`. Pick the latest Sol unless the user
 named a version. Do not hardcode an ID. Record provider, model, and effort
 only if exposed. Use `delegate_task` every round (`role: "review"`,
-`mode: "async"`). Save `taskId`. New `clientRequestId` per round.
+`mode: "async"`). Save `taskId`. New `clientRequestId` for each reviewer.
 `childThreadId` is storage, not the next target. Do not use
 `t3_thread_send`, `create_threads`, or `t3_thread_launch` for review.
 
@@ -84,8 +84,8 @@ S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
 
 ### Round 1 code review
 
-Call the Skill tool with "code-review" and do its steps 1 to 3 with the base as
-the fixed point. Its step 4 sub-agents, Standards and Spec, run one time, in
+Call the Skill tool with "code-review" and do its steps 2 and 3. Section 1
+gives the base and the diff, in place of its step 1. Its step 4 sub-agents, Standards and Spec, run one time, in
 round 1: start each as a Sol reviewer by the route above, at the same time as
 the round 1 reviewer.
 With no spec, start Standards only. Skip its step 5: the findings go to the
