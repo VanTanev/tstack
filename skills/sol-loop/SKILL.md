@@ -21,7 +21,9 @@ of scope creep and don't be scared to push back.
   the user asks.
 - Stop early if a round returns only nits. Declined nits and comment,
   doc, or format-only fixes need no new round.
-- One reviewer only. Sol must not start subagents or reviewers.
+- One reviewer a round. Round 1 adds one code review: two more Sol
+  reviewers, the Standards and Spec axes of the code-review skill. Sol must
+  not start subagents or reviewers.
 - Keep a ledger: id, severity, outcome, usage if returned. Never guess it.
 
 ## 1. Scope
@@ -60,8 +62,8 @@ a native Sol subagent and keep its ID. In Claude Code, use a custom subagent
 only if it is set up to run Sol. If no route runs Sol, report the blocker. Do
 not substitute a model.
 
-Do not edit scoped files while review runs. Wait for the notice. Do not
-poll or start a second reviewer. Timeout, error, or no reply is not
+Do not edit scoped files while review runs. Wait for every notice. Do not
+poll or start a reviewer that this skill does not name. Timeout, error, or no reply is not
 approval. On failure, cancel, verify stop, restart with the ledger.
 
 Round 1 brief (T3 children get no history):
@@ -78,6 +80,34 @@ blocker = intended case wrong. should = real bug callers will hit, in intent. ni
 Reply:
 VERDICT: APPROVE or CHANGES
 S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
+```
+
+### Round 1 code review
+
+Call the Skill tool with "code-review" and do its steps 1 to 3 with the base as
+the fixed point. Its step 4 sub-agents, Standards and Spec, run one time, in
+round 1: start each as a Sol reviewer by the route above, at the same time as
+the round 1 reviewer.
+With no spec, start Standards only. Skip its step 5: the findings go to the
+ledger, and later rounds check their fixes with the open ids.
+
+The code review never asks the user. When code-review finds no spec, start
+Standards only. When the repo has no issue tracker setup, go on without one.
+
+Code-review briefs, one for each axis (T3 children get no history):
+
+```
+Review only. Do not edit, commit, push, comment on PRs, or start subagents.
+Repo: <abs path> Base: <sha> Intent: <intent> Out of scope: <scope> Checks: <results>
+See: git diff <base> [-- <paths>]; git status --short (read untracked).
+<the code-review step 4 prompt of this axis, in full: Standards with the
+standards sources and the smell baseline, or Spec with the spec>
+blocker = a spec requirement missing or wrong. should = real bug callers will
+hit, a breach of a documented standard, or behaviour the spec did not ask for.
+nit = rest, and each baseline smell.
+Reply:
+VERDICT: APPROVE or CHANGES
+ST1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids: ST for Standards, SP for Spec)
 ```
 
 ## 3. Answer findings
@@ -101,12 +131,14 @@ changed, or approval does not cover the current behavior diff. Use a fresh
 `delegate_task` in T3, or follow up the saved native ID. Send the round 1 brief,
 the ledger (`fixed:` / `disagree:` / `declined:` + evidence), the same base
 diff, and the change since last round. Tell Sol: open ids and changed code only.
-Mark each old id `resolved` or `still open: <reason>`.
+Mark each old id `resolved` or `still open: <reason>`. The open ids include
+the open `ST` and `SP` ids. Standards and Spec do not run again.
 
 ## 5. Stop and ship
 
 Agreed: APPROVE on the current behavior diff, no blocker or should open,
-no concern of your own. Stuck: an item stays disputed after two replies,
+no concern of your own. Only the loop reviewer's verdict counts.
+"No blocker or should open" counts the `S`, `ST` and `SP` ids. Stuck: an item stays disputed after two replies,
 or budget ends. Show both sides in 2-3 lines each. The user decides.
 Budget end is not approval.
 
