@@ -22,8 +22,7 @@ of scope creep and don't be scared to push back.
 - Stop early if a round returns only nits. Declined nits and comment,
   doc, or format-only fixes need no new round.
 - One reviewer a round. Round 1 adds one code review: two more Sol
-  reviewers, the Standards and Spec axes of the code-review skill. Sol must
-  not start subagents or reviewers.
+  reviewers, Standards and Spec. Sol must not start subagents or reviewers.
 - Keep a ledger: id, severity, outcome, usage if returned. Never guess it.
 
 ## 1. Scope
@@ -84,30 +83,76 @@ S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
 
 ### Round 1 code review
 
-Call the Skill tool with "code-review" and do its steps 2 and 3. The base and
-the diff of section 1 replace its step 1. Its step 4 sub-agents, Standards and
-Spec, run one time, in round 1: start each as a Sol reviewer by the route
-above, at the same time as the round 1 reviewer.
-With no spec, start Standards only. Skip its step 5: the findings go to the
-ledger, and later rounds check their fixes with the open ids.
+Round 1 also starts two Sol reviewers by the route above, at the same time as
+the round 1 reviewer: Standards checks the diff against the repo's documented
+standards, and Spec checks it against the issue or spec. They run one time.
+Later rounds check their fixes with the open ids.
 
-The code review never asks the user. When code-review finds no spec, start
-Standards only. When the repo has no issue tracker setup, go on without one.
+The code review never asks the user. Before you start it, find:
 
-Code-review briefs, one for each axis (T3 children get no history):
+- Spec: issue refs in `git log <base>..HEAD` or the PR body, a path the user
+  named, or a spec file under `docs/`, `specs/` or `.scratch/` that matches the
+  branch. Fetch the issue text. With no spec, start Standards only.
+- Standards: every file in the repo that says how to write code.
+  `CODING_STANDARDS.md` and `CONTRIBUTING.md` are always on the list when
+  they exist.
+
+Code-review briefs, one for each axis (T3 children get no history). Both
+start with:
 
 ```
 Review only. Do not edit, commit, push, comment on PRs, or start subagents.
 Repo: <abs path> Base: <sha> Intent: <intent> Out of scope: <scope> Checks: <results>
 See: git diff <base> [-- <paths>]; git status --short (read untracked).
-<the code-review step 4 prompt of this axis, in full: Standards with the
-standards sources and the smell baseline, or Spec with the spec>
-blocker = a spec requirement missing or wrong. should = real bug callers will
-hit, a breach of a documented standard, or behaviour the spec did not ask for.
+```
+
+Standards continues:
+
+```
+Standards files: <paths>
+Report, per file or hunk, (a) each place the diff breaks a documented
+standard: cite the file and the rule; (b) each baseline smell you see: name
+it and quote the hunk. A documented standard overrides the baseline. Each
+smell is a judgement call ("possible Feature Envy"). Skip what tooling
+enforces. Under 400 words.
+Baseline (Fowler, Refactoring ch. 3), smell -> fix:
+- Mysterious Name: a name that does not say what it does or holds -> rename it.
+- Duplicated Code: the same logic in more than one hunk or file -> extract it.
+- Feature Envy: a method that uses another object's data more than its own
+  -> move it to that data.
+- Data Clumps: the same fields or params travel together -> one type.
+- Primitive Obsession: a primitive or string stands for a domain concept
+  -> a small type for it.
+- Repeated Switches: the same switch or if-cascade on one type in several
+  places -> polymorphism, or one shared map.
+- Shotgun Surgery: one change edits many files -> gather what changes
+  together into one module.
+- Divergent Change: one module edited for unrelated reasons -> split it.
+- Speculative Generality: hooks, params or abstraction the intent does not
+  need -> delete or inline it.
+- Message Chains: long a.b().c().d() walks -> one method on the first object.
+- Middle Man: a class or function that only delegates -> call the target.
+- Refused Bequest: a subclass that ignores most of what it inherits
+  -> composition.
+should = real bug callers will hit, or a breach of a documented standard.
 nit = rest, and each baseline smell.
 Reply:
 VERDICT: APPROVE or CHANGES
-ST1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids: ST for Standards, SP for Spec)
+ST1 [should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
+```
+
+Spec continues:
+
+```
+Spec: <the spec text, or its path>
+Report (a) requirements the spec asks for that are missing or partial;
+(b) behaviour in the diff that the spec did not ask for; (c) requirements
+that look done but wrong. Quote the spec line for each. Under 400 words.
+blocker = a spec requirement missing or wrong. should = real bug callers will
+hit, or behaviour the spec did not ask for. nit = rest.
+Reply:
+VERDICT: APPROVE or CHANGES
+SP1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion> (stable ids)
 ```
 
 ## 3. Answer findings
